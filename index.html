@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JERCAT Bot Platform - Accès Holders</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 48px;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Connexion wallet */
+        .connect-section {
+            text-align: center;
+        }
+
+        .connect-btn {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: #000;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .connect-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.4);
+        }
+
+        .connect-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Wallet info */
+        .wallet-info {
+            display: none;
+            text-align: center;
+        }
+
+        .wallet-info.active {
+            display: block;
+        }
+
+        .wallet-address {
+            font-family: monospace;
+            font-size: 14px;
+            margin: 20px 0;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+
+        .balance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .balance-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .balance-item h3 {
+            font-size: 14px;
+            opacity: 0.7;
+            margin-bottom: 10px;
+        }
+
+        .balance-item p {
+            font-size: 28px;
+            font-weight: bold;
+            color: #FFD700;
+        }
+
+        .tier-badge {
+            display: inline-block;
+            padding: 10px 30px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 16px;
+            margin: 20px 0;
+        }
+
+        .tier-bronze { background: #CD7F32; }
+        .tier-silver { background: #C0C0C0; color: #000; }
+        .tier-gold { background: #FFD700; color: #000; }
+        .tier-diamond { background: linear-gradient(45deg, #00D4FF, #0099CC); }
+        .tier-none { background: rgba(255, 0, 0, 0.3); }
+
+        /* Bots section */
+        .bots-section {
+            display: none;
+        }
+
+        .bots-section.active {
+            display: block;
+        }
+
+        .bot-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .bot-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .bot-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #FFD700;
+            transform: translateY(-5px);
+        }
+
+        .bot-card.locked {
+            opacity: 0.5;
+        }
+
+        .bot-card.locked::after {
+            content: "🔒";
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
+        }
+
+        .bot-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .bot-card h3 {
+            color: #FFD700;
+            margin-bottom: 10px;
+            font-size: 22px;
+        }
+
+        .bot-card p {
+            opacity: 0.8;
+            font-size: 14px;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .bot-requirement {
+            font-size: 12px;
+            opacity: 0.6;
+            margin: 10px 0;
+        }
+
+        .bot-status {
+            font-size: 13px;
+            padding: 8px;
+            background: rgba(0, 255, 0, 0.2);
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+
+        .bot-status.running {
+            display: block;
+            background: rgba(0, 255, 0, 0.2);
+        }
+
+        .bot-status.stopped {
+            display: block;
+            background: rgba(255, 0, 0, 0.2);
+        }
+
+        .start-bot-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .start-bot-btn:hover:not(:disabled) {
+            transform: scale(1.05);
+        }
+
+        .start-bot-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .stop-bot-btn {
+            width: 100%;
+            padding: 12px;
+            background: #ff4444;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .stop-bot-btn.active {
+            display: block;
+        }
+
+        /* Access denied */
+        .access-denied {
+            background: rgba(255, 0, 0, 0.1);
+            border: 2px solid rgba(255, 0, 0, 0.3);
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+        }
+
+        .access-denied.active {
+            display: block;
+        }
+
+        .access-denied h2 {
+            color: #ff4444;
+            margin-bottom: 20px;
+            font-size: 32px;
+        }
+
+        .buy-btn {
+            margin-top: 25px;
+            padding: 15px 50px;
+            background: #FFD700;
+            color: #000;
+            text-decoration: none;
+            border-radius: 50px;
+            display: inline-block;
+            font-weight: bold;
+            transition: all 0.3s;
+            font-size: 18px;
+        }
+
+        .buy-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.4);
+        }
+
+        /* Hover pour les liens */
+        a[href*="pancakeswap"]:hover,
+        a[href*="dex"]:hover,
+        a[href*="bot"]:hover,
+        a[href*="wallet"]:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Messages */
+        .message {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+            display: none;
+        }
+
+        .message.success {
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            display: block;
+        }
+
+        .message.error {
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid rgba(255, 0, 0, 0.3);
+            display: block;
+        }
+
+        .message.info {
+            background: rgba(0, 150, 255, 0.1);
+            border: 1px solid rgba(0, 150, 255, 0.3);
+            display: block;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid #FFD700;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 10px 30px rgba(255, 165, 0, 0.5);
+            }
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 15px 40px rgba(255, 165, 0, 0.8);
+            }
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            opacity: 0.7;
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 36px;
+            }
+
+            .bot-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <!-- Slogan accrocheur -->
+            <div style="display: inline-block; background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF6B00 100%); padding: 15px 40px; border-radius: 50px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(255, 165, 0, 0.5); animation: pulse 2s infinite; border: 3px solid rgba(255, 255, 255, 0.3);">
+                <p style="font-size: 24px; font-weight: bold; color: #000; text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5); margin: 0; letter-spacing: 1px;">
+                    🦁 JERCAT - Le chat qui RUGIT sur la BSC ! 🔥
+                </p>
+            </div>
+            
+            <h1>🐱 JERCAT BOT PLATFORM</h1>
+            <p class="subtitle">Bots de trading automatisés réservés aux holders</p>
+            
+            <!-- Contrat et liens d'achat -->
+            <div style="margin-top: 25px; padding: 20px; background: rgba(0, 0, 0, 0.3); border-radius: 15px; backdrop-filter: blur(10px);">
+                <p style="font-size: 14px; opacity: 0.8; margin-bottom: 10px;">Contrat JERCAT (BSC):</p>
+                <div style="font-family: monospace; font-size: 13px; background: rgba(0, 0, 0, 0.4); padding: 10px; border-radius: 8px; margin-bottom: 15px; word-break: break-all;">
+                    0x197CF8951d93325A9333857Ee5330daF7aC4bcCF
+                    <button onclick="copyContract()" style="margin-left: 10px; padding: 5px 15px; background: #FFD700; color: #000; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                        📋 Copier
+                    </button>
+                </div>
+                
+                <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px;">
+                    <a href="https://pancakeswap.finance/swap?outputCurrency=0x197CF8951d93325A9333857Ee5330daF7aC4bcCF" 
+                       target="_blank" 
+                       style="padding: 12px 25px; background: linear-gradient(45deg, #FFD700, #FFA500); color: #000; text-decoration: none; border-radius: 10px; font-weight: bold; transition: transform 0.3s;">
+                        🥞 Acheter sur PancakeSwap
+                    </a>
+                    <a href="https://dex-jercat.vercel.app/" 
+                       target="_blank" 
+                       style="padding: 12px 25px; background: linear-gradient(45deg, #00D4FF, #0099CC); color: #fff; text-decoration: none; border-radius: 10px; font-weight: bold; transition: transform 0.3s;">
+                        🔥 Acheter sur JERCAT DEX
+                    </a>
+                </div>
+
+                <!-- Nouveaux liens plateformes -->
+                <div style="border-top: 2px solid rgba(255, 255, 255, 0.1); padding-top: 20px; margin-top: 15px;">
+                    <p style="font-size: 14px; opacity: 0.8; margin-bottom: 15px; text-align: center;">🚀 Accès rapide aux plateformes JERCAT:</p>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                        <a href="https://dex-total.vercel.app/" 
+                           target="_blank" 
+                           style="padding: 12px 20px; background: linear-gradient(45deg, #8b5cf6, #7c3aed); color: #fff; text-decoration: none; border-radius: 10px; font-weight: bold; text-align: center; transition: transform 0.3s; border: 2px solid rgba(255, 255, 255, 0.2);">
+                            🌐 DEX Total
+                        </a>
+                        <a href="https://bot-jercat-all-in.vercel.app/" 
+                           target="_blank" 
+                           style="padding: 12px 20px; background: linear-gradient(45deg, #f59e0b, #f97316); color: #000; text-decoration: none; border-radius: 10px; font-weight: bold; text-align: center; transition: transform 0.3s; border: 2px solid rgba(255, 255, 255, 0.2);">
+                            ⚡ Bot All-In
+                        </a>
+                        <a href="https://wallet-jercat-eidu.vercel.app/" 
+                           target="_blank" 
+                           style="padding: 12px 20px; background: linear-gradient(45deg, #10b981, #059669); color: #fff; text-decoration: none; border-radius: 10px; font-weight: bold; text-align: center; transition: transform 0.3s; border: 2px solid rgba(255, 255, 255, 0.2);">
+                            👛 Wallet JERCAT
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section connexion -->
+        <div class="card">
+            <div id="connectSection" class="connect-section">
+                <h2 style="margin-bottom: 20px;">Connexion</h2>
+                <p style="margin-bottom: 20px; opacity: 0.8;">Connecte ton wallet MetaMask pour accéder aux bots</p>
+                <button id="connectBtn" class="connect-btn">
+                    🦊 Connecter MetaMask
+                </button>
+            </div>
+
+            <!-- Loading -->
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 15px;">Vérification en cours...</p>
+            </div>
+
+            <!-- Wallet info -->
+            <div id="walletInfo" class="wallet-info">
+                <h2 style="margin-bottom: 20px;">Mon Wallet</h2>
+                <div class="wallet-address">
+                    <strong>Adresse:</strong> <span id="walletAddress"></span>
+                </div>
+
+                <div class="balance-grid">
+                    <div class="balance-item">
+                        <h3>Balance JERCAT</h3>
+                        <p id="jercatBalance">0</p>
+                    </div>
+                    <div class="balance-item">
+                        <h3>Balance BNB</h3>
+                        <p id="bnbBalance">0</p>
+                    </div>
+                </div>
+
+                <div>
+                    <span id="tierBadge" class="tier-badge tier-none">Tier: NONE</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Message -->
+        <div id="message" class="message"></div>
+
+        <!-- Accès refusé -->
+        <div id="accessDenied" class="access-denied card">
+            <h2>🚫 Accès Refusé</h2>
+            <p style="font-size: 18px;">Tu dois posséder au moins <strong>100 JERCAT</strong> pour utiliser les bots de trading.</p>
+            <p style="margin-top: 20px; font-size: 16px;">Balance actuelle: <strong><span id="deniedBalance">0</span> JERCAT</strong></p>
+            
+            <div style="display: flex; gap: 15px; justify-content: center; margin-top: 25px; flex-wrap: wrap;">
+                <a href="https://dex-jercat.vercel.app/" 
+                   target="_blank" 
+                   class="buy-btn"
+                   style="background: linear-gradient(45deg, #00D4FF, #0099CC);">
+                    🔥 Acheter sur JERCAT DEX
+                </a>
+                <a href="https://pancakeswap.finance/swap?outputCurrency=0x197CF8951d93325A9333857Ee5330daF7aC4bcCF" 
+                   target="_blank" 
+                   class="buy-btn">
+                    🥞 Acheter sur PancakeSwap
+                </a>
+            </div>
+            
+            <p style="margin-top: 20px; font-size: 13px; opacity: 0.7; font-family: monospace;">
+                Contrat: 0x197CF8951d93325A9333857Ee5330daF7aC4bcCF
+            </p>
+        </div>
+
+        <!-- Section bots -->
+        <div id="botsSection" class="bots-section">
+            <div class="card">
+                <h2 style="margin-bottom: 20px; text-align: center;">🤖 Mes Bots de Trading</h2>
+                
+                <div class="bot-grid">
+                    <!-- Bot DCA Basique -->
+                    <div class="bot-card" data-min-balance="100" data-bot-id="dca-basic">
+                        <div class="bot-icon">📈</div>
+                        <h3>DCA Bot Basique</h3>
+                        <p>Achat/vente automatique avec stratégie DCA. Idéal pour débuter dans le trading automatisé.</p>
+                        <div class="bot-requirement">✅ Minimum: 100 JERCAT</div>
+                        <div class="bot-status" id="status-dca-basic"></div>
+                        <button class="start-bot-btn" onclick="startBot('dca-basic')">
+                            🚀 Lancer le bot
+                        </button>
+                        <button class="stop-bot-btn" id="stop-dca-basic" onclick="stopBot('dca-basic')">
+                            ⏹️ Arrêter le bot
+                        </button>
+                    </div>
+
+                    <!-- Bot Arbitrage Simple -->
+                    <div class="bot-card" data-min-balance="500" data-bot-id="arbitrage-simple">
+                        <div class="bot-icon">⚡</div>
+                        <h3>Arbitrage Simple</h3>
+                        <p>Arbitrage entre PancakeSwap et Biswap. Profite des écarts de prix entre 2 DEX.</p>
+                        <div class="bot-requirement">✅ Minimum: 500 JERCAT</div>
+                        <div class="bot-status" id="status-arbitrage-simple"></div>
+                        <button class="start-bot-btn" onclick="startBot('arbitrage-simple')">
+                            🚀 Lancer le bot
+                        </button>
+                        <button class="stop-bot-btn" id="stop-arbitrage-simple" onclick="stopBot('arbitrage-simple')">
+                            ⏹️ Arrêter le bot
+                        </button>
+                    </div>
+
+                    <!-- Bot Arbitrage Multi-DEX -->
+                    <div class="bot-card" data-min-balance="1000" data-bot-id="arbitrage-multi">
+                        <div class="bot-icon">🔥</div>
+                        <h3>Arbitrage Multi-DEX</h3>
+                        <p>19 routes d'arbitrage sur PancakeSwap, Biswap, ApeSwap et plus. Maximum de profits!</p>
+                        <div class="bot-requirement">✅ Minimum: 1,000 JERCAT</div>
+                        <div class="bot-status" id="status-arbitrage-multi"></div>
+                        <button class="start-bot-btn" onclick="startBot('arbitrage-multi')">
+                            🚀 Lancer le bot
+                        </button>
+                        <button class="stop-bot-btn" id="stop-arbitrage-multi" onclick="stopBot('arbitrage-multi')">
+                            ⏹️ Arrêter le bot
+                        </button>
+                    </div>
+
+                    <!-- Bot Anti-Dump -->
+                    <div class="bot-card" data-min-balance="1000" data-bot-id="anti-dump">
+                        <div class="bot-icon">🛡️</div>
+                        <h3>Anti-Dump System</h3>
+                        <p>Détection automatique des dumps et achat après baisse importante. Protège tes investissements.</p>
+                        <div class="bot-requirement">✅ Minimum: 1,000 JERCAT</div>
+                        <div class="bot-status" id="status-anti-dump"></div>
+                        <button class="start-bot-btn" onclick="startBot('anti-dump')">
+                            🚀 Lancer le bot
+                        </button>
+                        <button class="stop-bot-btn" id="stop-anti-dump" onclick="stopBot('anti-dump')">
+                            ⏹️ Arrêter le bot
+                        </button>
+                    </div>
+
+                    <!-- Bot Analyse Technique -->
+                    <div class="bot-card" data-min-balance="5000" data-bot-id="technical">
+                        <div class="bot-icon">📊</div>
+                        <h3>Bot Analyse Avancée</h3>
+                        <p>Trading avec RSI, MACD, Bollinger Bands. Stratégies techniques professionnelles.</p>
+                        <div class="bot-requirement">✅ Minimum: 5,000 JERCAT</div>
+                        <div class="bot-status" id="status-technical"></div>
+                        <button class="start-bot-btn" onclick="startBot('technical')">
+                            🚀 Lancer le bot
+                        </button>
+                        <button class="stop-bot-btn" id="stop-technical" onclick="stopBot('technical')">
+                            ⏹️ Arrêter le bot
+                        </button>
+                    </div>
+
+                    <!-- Bot Premium -->
+                    <div class="bot-card" data-min-balance="10000" data-bot-id="premium">
+                        <div class="bot-icon">💎</div>
+                        <h3>Bot Premium</h3>
+                        <p>Tous les bots combinés + signaux premium + priorité d'exécution. VIP access!</p>
+                        <div class="bot-requirement">✅ Minimum: 10,000 JERCAT</div>
+                        <div class="bot-status" id="status-premium"></div>
+                        <button class="start-bot-btn" onclick="startBot('premium')">
+                            🚀 Lancer le bot
+                        </button>
+                        <button class="stop-bot-btn" id="stop-premium" onclick="stopBot('premium')">
+                            ⏹️ Arrêter le bot
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>© 2024 JERCAT Token - Tous droits réservés</p>
+            <p style="margin-top: 10px;">
+                ⚠️ Le trading de cryptomonnaies comporte des risques. N'investis que ce que tu peux te permettre de perdre.
+            </p>
+        </div>
+    </div>
+
+    <!-- Web3.js -->
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
+    
+    <script>
+        // Configuration
+        const JERCAT_CONTRACT = "0x197CF8951d93325A9333857Ee5330daF7aC4bcCF";
+        const BSC_CHAIN_ID = 56;
+        
+        const ERC20_ABI = [
+            {
+                "constant": true,
+                "inputs": [{"name": "_owner", "type": "address"}],
+                "name": "balanceOf",
+                "outputs": [{"name": "balance", "type": "uint256"}],
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "decimals",
+                "outputs": [{"name": "", "type": "uint8"}],
+                "type": "function"
+            }
+        ];
+
+        let web3;
+        let userAccount;
+        let jercatBalance = 0;
+        let activeBots = JSON.parse(localStorage.getItem('activeBots') || '{}');
+
+        // Éléments DOM
+        const connectBtn = document.getElementById('connectBtn');
+        const connectSection = document.getElementById('connectSection');
+        const walletInfo = document.getElementById('walletInfo');
+        const loading = document.getElementById('loading');
+        const accessDenied = document.getElementById('accessDenied');
+        const botsSection = document.getElementById('botsSection');
+        const messageDiv = document.getElementById('message');
+
+        // Vérifier si il y a des bots actifs au chargement
+        window.addEventListener('load', () => {
+            restoreActiveBots();
+        });
+
+        // Connexion MetaMask
+        connectBtn.addEventListener('click', async () => {
+            if (typeof window.ethereum === 'undefined') {
+                showMessage('MetaMask n\'est pas installé! Installe-le depuis metamask.io', 'error');
+                return;
+            }
+
+            try {
+                connectSection.style.display = 'none';
+                loading.classList.add('active');
+
+                // Demander connexion
+                const accounts = await ethereum.request({ 
+                    method: 'eth_requestAccounts' 
+                });
+                userAccount = accounts[0];
+
+                // Init Web3
+                web3 = new Web3(window.ethereum);
+
+                // Vérifier BSC
+                const chainId = await web3.eth.getChainId();
+                if (chainId !== BSC_CHAIN_ID) {
+                    await switchToBSC();
+                }
+
+                // Charger balances
+                await loadBalances();
+
+                loading.classList.remove('active');
+
+            } catch (error) {
+                console.error('Erreur:', error);
+                showMessage('Erreur de connexion: ' + error.message, 'error');
+                connectSection.style.display = 'block';
+                loading.classList.remove('active');
+            }
+        });
+
+        // Switch to BSC
+        async function switchToBSC() {
+            try {
+                await ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: '0x38' }],
+                });
+            } catch (error) {
+                if (error.code === 4902) {
+                    await ethereum.request({
+                        method: 'wallet_addEthereumChain',
+                        params: [{
+                            chainId: '0x38',
+                            chainName: 'BSC Mainnet',
+                            nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
+                            rpcUrls: ['https://bsc-dataseed1.binance.org'],
+                            blockExplorerUrls: ['https://bscscan.com']
+                        }]
+                    });
+                }
+            }
+        }
+
+        // Charger les balances
+        async function loadBalances() {
+            try {
+                // Balance BNB
+                const bnbWei = await web3.eth.getBalance(userAccount);
+                const bnbBalance = parseFloat(web3.utils.fromWei(bnbWei, 'ether')).toFixed(4);
+
+                // Balance JERCAT
+                const jercatContract = new web3.eth.Contract(ERC20_ABI, JERCAT_CONTRACT);
+                const decimals = await jercatContract.methods.decimals().call();
+                const balanceWei = await jercatContract.methods.balanceOf(userAccount).call();
+                jercatBalance = parseFloat(balanceWei / (10 ** decimals));
+
+                // Afficher
+                document.getElementById('walletAddress').textContent = 
+                    userAccount.substring(0, 6) + '...' + userAccount.substring(38);
+                document.getElementById('jercatBalance').textContent = jercatBalance.toFixed(2);
+                document.getElementById('bnbBalance').textContent = bnbBalance;
+
+                // Tier
+                const tier = getTier(jercatBalance);
+                const tierBadge = document.getElementById('tierBadge');
+                tierBadge.textContent = `Tier: ${tier.toUpperCase()}`;
+                tierBadge.className = `tier-badge tier-${tier}`;
+
+                // Afficher wallet info
+                walletInfo.classList.add('active');
+
+                // Vérifier accès
+                checkAccess();
+
+            } catch (error) {
+                console.error('Erreur chargement balances:', error);
+                showMessage('Erreur: ' + error.message, 'error');
+            }
+        }
+
+        // Déterminer le tier
+        function getTier(balance) {
+            if (balance >= 10000) return 'diamond';
+            if (balance >= 5000) return 'gold';
+            if (balance >= 1000) return 'silver';
+            if (balance >= 100) return 'bronze';
+            return 'none';
+        }
+
+        // Vérifier l'accès
+        function checkAccess() {
+            if (jercatBalance >= 100) {
+                // Accès OK
+                botsSection.classList.add('active');
+                accessDenied.classList.remove('active');
+
+                // Activer/désactiver selon balance
+                document.querySelectorAll('.bot-card').forEach(card => {
+                    const minBalance = parseInt(card.dataset.minBalance);
+                    const button = card.querySelector('.start-bot-btn');
+                    
+                    if (jercatBalance >= minBalance) {
+                        card.classList.remove('locked');
+                        button.disabled = false;
+                    } else {
+                        card.classList.add('locked');
+                        button.disabled = true;
+                    }
+                });
+
+                showMessage('✅ Accès autorisé! Tu peux utiliser les bots.', 'success');
+
+            } else {
+                // Accès refusé
+                accessDenied.classList.add('active');
+                botsSection.classList.remove('active');
+                document.getElementById('deniedBalance').textContent = jercatBalance.toFixed(2);
+            }
+        }
+
+        // Copier l'adresse du contrat
+        function copyContract() {
+            navigator.clipboard.writeText(JERCAT_CONTRACT).then(() => {
+                showMessage('📋 Adresse du contrat copiée!', 'success');
+            }).catch(err => {
+                showMessage('❌ Erreur de copie', 'error');
+            });
+        }
+
+        // Lancer un bot
+        function startBot(botId) {
+            const card = document.querySelector(`[data-bot-id="${botId}"]`);
+            const minBalance = parseInt(card.dataset.minBalance);
+
+            if (jercatBalance < minBalance) {
+                showMessage(`❌ Balance insuffisant. Requis: ${minBalance} JERCAT`, 'error');
+                return;
+            }
+
+            // Simuler le démarrage
+            const statusDiv = document.getElementById(`status-${botId}`);
+            statusDiv.textContent = '🟢 Bot en cours d\'exécution...';
+            statusDiv.className = 'bot-status running';
+
+            // Afficher bouton stop
+            const stopBtn = document.getElementById(`stop-${botId}`);
+            stopBtn.classList.add('active');
+
+            // Désactiver bouton start
+            card.querySelector('.start-bot-btn').style.display = 'none';
+
+            // Sauvegarder
+            activeBots[botId] = {
+                started: new Date().toISOString(),
+                status: 'running'
+            };
+            localStorage.setItem('activeBots', JSON.stringify(activeBots));
+
+            showMessage(`🚀 Bot ${botId} lancé avec succès!`, 'success');
+
+            // NOTE: ICI TU METTRAIS TON VRAI CODE DE BOT
+            // Pour l'instant c'est juste une simulation
+        }
+
+        // Arrêter un bot
+        function stopBot(botId) {
+            const statusDiv = document.getElementById(`status-${botId}`);
+            statusDiv.textContent = '🔴 Bot arrêté';
+            statusDiv.className = 'bot-status stopped';
+
+            // Cacher bouton stop
+            const stopBtn = document.getElementById(`stop-${botId}`);
+            stopBtn.classList.remove('active');
+
+            // Réafficher bouton start
+            const card = document.querySelector(`[data-bot-id="${botId}"]`);
+            card.querySelector('.start-bot-btn').style.display = 'block';
+
+            // Supprimer de la sauvegarde
+            delete activeBots[botId];
+            localStorage.setItem('activeBots', JSON.stringify(activeBots));
+
+            showMessage(`⏹️ Bot ${botId} arrêté.`, 'info');
+        }
+
+        // Restaurer les bots actifs
+        function restoreActiveBots() {
+            for (const [botId, botData] of Object.entries(activeBots)) {
+                if (botData.status === 'running') {
+                    const statusDiv = document.getElementById(`status-${botId}`);
+                    if (statusDiv) {
+                        statusDiv.textContent = '🟢 Bot en cours d\'exécution...';
+                        statusDiv.className = 'bot-status running';
+                        
+                        const card = document.querySelector(`[data-bot-id="${botId}"]`);
+                        if (card) {
+                            card.querySelector('.start-bot-btn').style.display = 'none';
+                            document.getElementById(`stop-${botId}`).classList.add('active');
+                        }
+                    }
+                }
+            }
+        }
+
+        // Afficher message
+        function showMessage(text, type) {
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+            
+            setTimeout(() => {
+                messageDiv.className = 'message';
+            }, 5000);
+        }
+
+        // Écouter les changements
+        if (typeof window.ethereum !== 'undefined') {
+            ethereum.on('accountsChanged', (accounts) => {
+                if (accounts.length === 0) {
+                    location.reload();
+                } else {
+                    userAccount = accounts[0];
+                    loadBalances();
+                }
+            });
+
+            ethereum.on('chainChanged', () => {
+                location.reload();
+            });
+        }
+    </script>
+</body>
+</html>
